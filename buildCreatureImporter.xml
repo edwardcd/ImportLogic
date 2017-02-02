@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+
+<project name="d20Pro" basedir="." default="rebuildCreatureImporters">
+
+	<import file="build.xml"/>
+	
+	<property name="ctr.src.dir" value="src/ctr-" />
+	
+	<property name="ctr.out.dir" value="${build.dir}/addon/creature" />
+	<property name="ctr.test.dir" value="judge/addon/creature" />
+
+<!--	
+	<target name="build_HeroLab">
+	    <buildCreatureImportPlugin bin.dir="herolabnative" src.dir="${ctr.src.dir}herolabnative/java" plugin.file="HeroLabNative.jar" command.factory="com.mesamundi.d20pro.herolab.CommandFactoryImpl" />
+	  </target>
+	-->
+	<!-- thraxxis: commented out old hero lab --> 
+  <target name="build_HeroLab">
+    <buildCreatureImportPlugin bin.dir="herolab" src.dir="${ctr.src.dir}herolab/java" plugin.file="d20ProPlugin_HeroLab.jar" command.factory="com.d20pro.plugin.stock.herolab.CommandFactoryImpl" />
+  </target>
+  
+
+  <target name="build_PCGen">
+    <buildCreatureImportPlugin bin.dir="pcgen" src.dir="${ctr.src.dir}pcgen/java" plugin.file="d20ProPlugin_PCGen.jar" command.factory="com.d20pro.plugin.stock.pcgen.CommandFactoryImpl" />
+  </target>
+  
+  <target name="build_FourE">
+    <buildCreatureImportPlugin bin.dir="4e" src.dir="${ctr.src.dir}4e/java" plugin.file="d20ProPlugin_FourE.jar" command.factory="com.d20pro.plugin.stock.foure.CommandFactoryImpl" />
+  </target>
+	
+	<path id="plugin-build-classpath">
+		<fileset dir="${lib.internal.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.external.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${d20pro.jar.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>	
+	
+	<macrodef name="buildCreatureImportPlugin">
+		<attribute name="bin.dir" />
+		<attribute name="src.dir" />
+		<attribute name="plugin.file" />
+		<attribute name="command.factory" />
+		<sequential>
+			<echo message="Building @{plugin.file}" />
+
+			<delete dir="${ctr.out.dir}/@{bin.dir}" />
+			<mkdir dir="${ctr.out.dir}/@{bin.dir}" />
+
+			<delete file="${ctr.out.dir}/@{plugin.file}" />
+
+			<javac destdir="${ctr.out.dir}/@{bin.dir}" source="1.8" target="1.8" debug="true" deprecation="false" optimize="true" failonerror="true">
+				<!-- <compilerarg value="-Xlint:unchecked" /> -->
+				<src path="@{src.dir}" />
+				<classpath refid="plugin-build-classpath" />
+			</javac>
+
+			<jar jarfile="${ctr.out.dir}/@{plugin.file}" compress="true">
+				<fileset dir="${ctr.out.dir}/@{bin.dir}">
+					<include name="**/*.class" />
+				</fileset>
+
+				<manifest>
+					<attribute name="Built-By" value="Mesa Mundi, Inc" />
+					<attribute name="Sealed" value="true" />
+					<attribute name="Fac1" value="@{command.factory}" />
+
+					<!-- TODO:think about obfuscation -->
+				</manifest>
+			</jar>
+			<mkdir dir="${ctr.out.dir}/@{bin.dir}" />
+			<copy file="${ctr.out.dir}/@{plugin.file}" todir="installFiles/CoreInstall/${ctr.test.dir}" />
+			<copy file="${ctr.out.dir}/@{plugin.file}" todir="${ctr.test.dir}" />
+		</sequential>
+	</macrodef>
+	
+  <target name="cleanCreatureImporters">
+    <echo message="Cleaning ${ctr.out.dir}..."/>
+    <delete dir="${ctr.out.dir}"/>
+    <echo message="Clean."/>
+  </target>
+	
+	<target name="rebuildCreatureImporters" depends="cleanCreatureImporters, build_HeroLab, build_PCGen, build_FourE" />
+		
+</project>	
